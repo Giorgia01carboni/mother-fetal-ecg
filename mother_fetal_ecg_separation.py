@@ -6,16 +6,14 @@ import matplotlib.pyplot as plt
 # fetal_beat_positions -> positions of the fetal beats (used as a reference)
 # sampling rate = 1000Hz
 pos = np.loadtxt('fetal_beat_positions.csv', delimiter=',')
-print(pos.shape)
+
 Y = np.loadtxt('abdominal_ecg.csv', delimiter=',')
 scalpECG = Y[:, 0]
 # aY -> abdominal ecgs
 aY = Y[:, 1:5]
 aY = np.matrix.transpose(aY)
 
-print(Y.shape)
-print(aY.shape)
-
+'''
 fix, axs = plt.subplots(5, 1, figsize=(16,20))
 axs[0].plot(scalpECG)
 axs[0].set_title('Scalp ECG')
@@ -27,6 +25,7 @@ for i in range(4):
 plt.tight_layout()
 plt.show()
 print()
+'''
 
 # Principal Component Analysis
 covariance = np.cov(aY, rowvar=True)
@@ -47,8 +46,8 @@ Xpca = np.matmul(W, aY)
 # Plot of the 4 estimated sources
 figs, ax = plt.subplots(4, 1, figsize=(16, 20))
 for j in range(4):
-  ax[j].plot(Xpca[j,:])
-  ax[j].set_title(f"PCA of source {j+1}")
+    ax[j].plot(Xpca[j, :])
+    ax[j].set_title(f"PCA of source {j + 1}")
 plt.tight_layout()
 plt.show()
 
@@ -61,3 +60,23 @@ normalized_val = val / np.sum(val)
 tot_variance = np.cumsum(normalized_val)
 num_components = np.argmax(tot_variance >= 0.90) + 1
 print("Number of components which cover at least 90% of the overall variance: ", num_components)
+
+# Set to 0 the components that do not contribute to the overall variance
+Xpca_den = Xpca.copy()
+Xpca_den[num_components:, :] = 0
+# Reconstruction of denoised abdominal ECG aYden=W’Xpca_den
+W_transposed = np.matrix.transpose(W)
+aYden = np.matmul(W_transposed, Xpca_den)
+
+# Plot of the 4 estimated sources denoised
+figs, ax = plt.subplots(4, 2, figsize=(24, 30))  # 4 segnali, 2 colonne (originale vs denoised)
+
+for k in range(4):
+    ax[k, 0].plot(aY[k, :], color='blue')  # Segnale originale
+    ax[k, 0].set_title(f"Original Abdominal ECG {k + 1}")
+
+    ax[k, 1].plot(aYden[k, :], color='red')  # Segnale denoised
+    ax[k, 1].set_title(f"Denoised Abdominal ECG {k + 1}")
+
+plt.tight_layout()
+plt.show()
